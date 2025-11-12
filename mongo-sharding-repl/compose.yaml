@@ -88,6 +88,30 @@ services:
       interval: 5s
       start_period: 10s
 
+  shard1_repl1:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    container_name: shard1_repl1
+    restart: always
+    ports:
+      - "27028:27028"
+    networks:
+      - app-network
+#        ipv4_address: 173.17.0.9
+    volumes:
+      - shard1-repl1-data:/data/db
+    command:
+      [
+        "--replSet",
+        "shard1",
+        "--bind_ip_all",
+        "--port",
+        "27028"
+      ]
+    healthcheck:
+      test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      start_period: 10s
+
   shard2:
     image: dh-mirror.gitverse.ru/mongo:latest
     container_name: shard2
@@ -113,11 +137,37 @@ services:
       interval: 5s
       start_period: 10s
 
+  shard2_repl1:
+    image: dh-mirror.gitverse.ru/mongo:latest
+    container_name: shard2_repl1
+    restart: always
+    ports:
+      - "27029:27029"
+    networks:
+      - app-network
+    #        ipv4_address: 173.17.0.9
+    volumes:
+      - shard2-repl1-data:/data/db
+    command:
+      [
+        "--replSet",
+        "shard2",
+        "--bind_ip_all",
+        "--port",
+        "27029"
+      ]
+    healthcheck:
+      test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
+      interval: 5s
+      start_period: 10s
+
 
 volumes:
   config-data:
   shard1-data:
+  shard1-repl1-data:
   shard2-data:
+  shard2-repl1-data:
 
 networks:
   app-network:

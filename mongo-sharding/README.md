@@ -3,7 +3,7 @@
 ## Описание
 - Применили шардирование к БД согласно схемы
   - [task2.drawio](schemas/task2.drawio)
-  - ![task2.jpg](schemas/task2.jpg)
+  - e![task2.jpg](schemas/task2.jpg)
   - 
 ## Как запустить
 - выполнять из директории/mongo-sharding
@@ -21,7 +21,7 @@ sudo docker compose up -d
 docker exec -it configSrv mongosh --port 27017
 
 // иницилизация сервера
-> rs.initiate(
+rs.initiate(
   {
     _id : "config_server",
        configsvr: true,
@@ -31,7 +31,7 @@ docker exec -it configSrv mongosh --port 27017
   }
 );
 
-> exit(); 
+exit(); 
 
 ```
 
@@ -51,7 +51,7 @@ rs.initiate(
     }
 );
 
-> exit();
+exit();
 
 ```
 
@@ -61,7 +61,7 @@ rs.initiate(
 docker exec -it shard2 mongosh --port 27019
 
 // иницилизация шарды 2
-> rs.initiate(
+rs.initiate(
     {
       _id : "shard2",
       members: [
@@ -71,7 +71,7 @@ docker exec -it shard2 mongosh --port 27019
     }
   );
   
-> exit();
+exit();
 
 ```
 
@@ -97,22 +97,24 @@ use somedb;
 for(var i = 0; i < 1000; i++) db.helloDoc.insert({age:i, name:"ly"+i})
 
 // посмотреть количетсво записей из роутера
-> db.helloDoc.countDocuments()  // покажет 1000, так как собирает данные с двух шард
+db.helloDoc.countDocuments()  // покажет 1000, так как собирает данные с двух шард
+
+exit(); 
 
 ```
 
 - посмотреть количество документов с разных шард
 ```shell
 // подключиться к контейнеру роутера
- docker exec -it shard1 mongosh --port 27018 // либо --port 27019
+docker exec -it shard1 mongosh --port 27018 // либо --port 27019
  
 // перекдючиться на БД somedb
- > use somedb;
+use somedb;
  
 // посмотреть количетсво записей из шарды
- > db.helloDoc.countDocuments();  // будет чуть меньше/больше половины загруженных данных
+db.helloDoc.countDocuments();  // будет чуть меньше/больше половины загруженных данных
  
- > exit(); 
+exit(); 
 ```
 
 ## Как проверить
