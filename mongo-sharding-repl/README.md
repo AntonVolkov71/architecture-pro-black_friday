@@ -20,6 +20,9 @@
 // windows
 docker-compose up -d
 
+// если что-то пошло не так 
+docker compose down -v
+
 // linuxa 
 sudo docker compose up -d 
 ```
@@ -49,7 +52,6 @@ exit();
 // подключиться к контейнеру шарды 1
 docker exec -it shard1 mongosh --port 27018
 
-// иницилизация шарды 1
 rs.initiate(
     {
       _id : "shard1",
@@ -64,12 +66,11 @@ exit();
 
 ```
 
-- инициализация шарды 2 и его реплики
+- настройка шарды 2 и его реплики
 ```shell 
 // подключиться к контейнеру шарды 2
 docker exec -it shard2 mongosh --port 27019
 
-// иницилизация шарды 2
 rs.initiate(
     {
       _id : "shard2",
@@ -94,8 +95,8 @@ exit();
 docker exec -it mongos_router mongosh --port 27020
 
 // добавить шарды в роутер
-sh.addShard( "shard1/shard1:27018");
-sh.addShard( "shard2/shard2:27019");
+sh.addShard("shard1/shard1:27018", "shard1_repl1:27028");
+sh.addShard("shard2/shard2:27019", "shard2_repl1:27029");
 
 // создание БД "somedb"
 sh.enableSharding("somedb");

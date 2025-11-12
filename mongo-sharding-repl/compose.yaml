@@ -4,8 +4,9 @@ services:
     build: 
       context: api_app
       dockerfile: Dockerfile
-    depends_on:
-      - mongos_router
+#    depends_on:
+#      mongos_router:
+#        condition: service_healthy
     ports:
       - 8080:8080
     networks:
@@ -35,10 +36,11 @@ services:
         "27017"
       ]
     healthcheck:
-      test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
       interval: 5s
-      start_period: 10s
-
+      timeout: 10s
+      retries: 10
+      start_period: 30s
 
   mongos_router:
     image: mongo:latest
@@ -49,6 +51,8 @@ services:
     networks:
       - app-network
 #        ipv4_address: 173.17.0.7
+#    depends_on:
+#       - configSrv
     command:
       [
         "mongos",
@@ -59,12 +63,14 @@ services:
         "27020"
       ]
     healthcheck:
-      test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
-      interval: 5s
-      start_period: 10s
+      test: [ "CMD", "mongosh", "--port", "27020", "--eval", "db.adminCommand('ping')" ]
+      interval: 10s
+      timeout: 15s
+      retries: 15
+      start_period: 15s
 
   shard1:
-    image: dh-mirror.gitverse.ru/mongo:latest
+    image: mongo:latest
     container_name: shard1
     restart: always
     ports:
@@ -84,12 +90,14 @@ services:
         "27018"
       ]
     healthcheck:
-      test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
+      test: [ "CMD", "mongosh", "--port", "27018", "--eval", "db.adminCommand('ping')" ]
       interval: 5s
-      start_period: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
 
   shard1_repl1:
-    image: dh-mirror.gitverse.ru/mongo:latest
+    image: mongo:latest
     container_name: shard1_repl1
     restart: always
     ports:
@@ -101,6 +109,7 @@ services:
       - shard1-repl1-data:/data/db
     command:
       [
+        "--shardsvr",
         "--replSet",
         "shard1",
         "--bind_ip_all",
@@ -108,12 +117,14 @@ services:
         "27028"
       ]
     healthcheck:
-      test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
+      test: [ "CMD", "mongosh", "--port", "27028", "--eval", "db.adminCommand('ping')" ]
       interval: 5s
-      start_period: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
 
   shard2:
-    image: dh-mirror.gitverse.ru/mongo:latest
+    image: mongo:latest
     container_name: shard2
     restart: always
     ports:
@@ -133,12 +144,14 @@ services:
         "27019"
       ]
     healthcheck:
-      test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
+      test: [ "CMD", "mongosh", "--port", "27019", "--eval", "db.adminCommand('ping')" ]
       interval: 5s
-      start_period: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
 
   shard2_repl1:
-    image: dh-mirror.gitverse.ru/mongo:latest
+    image: mongo:latest
     container_name: shard2_repl1
     restart: always
     ports:
@@ -150,6 +163,7 @@ services:
       - shard2-repl1-data:/data/db
     command:
       [
+        "--shardsvr",
         "--replSet",
         "shard2",
         "--bind_ip_all",
@@ -157,10 +171,11 @@ services:
         "27029"
       ]
     healthcheck:
-      test: [ "CMD", "mongo", "--eval", "db.adminCommand('ping')" ]
+      test: [ "CMD", "mongosh", "--port", "27029", "--eval", "db.adminCommand('ping')" ]
       interval: 5s
-      start_period: 10s
-
+      timeout: 10s
+      retries: 10
+      start_period: 30s
 
 volumes:
   config-data:
