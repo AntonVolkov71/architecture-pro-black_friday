@@ -111,6 +111,15 @@ function check_replica_status() {
   print_color "check_replica_status finished"
 }
 
+### проверка кеширования
+function redis_cash() {
+  print_color "redis_cash..."
+
+  docker compose exec -T redis_1 redis-cli ping
+
+  print_color "redis_cash finished"
+}
+
 function timeout() {
   sleep 5
 }
@@ -134,4 +143,7 @@ check_data_shard1
 timeout
 
 check_replica_status
+timeout
+
+redis_cash
 
