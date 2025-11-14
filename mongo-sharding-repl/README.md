@@ -75,8 +75,8 @@ rs.initiate(
     {
       _id : "shard2",
       members: [
-        { _id : 1, host : "shard2:27019" },
-        {_id: 1, host: "shard2_repl1:27029"}
+        { _id : 2, host : "shard2:27019" },
+        {_id: 3, host: "shard2_repl1:27029"}
         
       ]
     }
@@ -95,8 +95,8 @@ exit();
 docker exec -it mongos_router mongosh --port 27020
 
 // добавить шарды в роутер
-sh.addShard("shard1/shard1:27018", "shard1_repl1:27028");
-sh.addShard("shard2/shard2:27019", "shard2_repl1:27029");
+sh.addShard("shard1/shard1:27018, shard1_repl1:27028");
+sh.addShard("shard2/shard2:27019, shard2_repl1:27029");
 
 // создание БД "somedb"
 sh.enableSharding("somedb");

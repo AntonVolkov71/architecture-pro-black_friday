@@ -23,16 +23,14 @@ function server_cfg() {
 ### настройка шарды 1 и его реплики
 function shard1() {
   print_color "shard1 starting..."
-
+#{ _id: 1, host: 'shard1_repl1:27028' }
   docker compose exec -T shard1 mongosh --port 27018 --eval "
-  rs.status()"
-#  rs.initiate({
-#    _id: 'shard1',
-#    members: [
-#      { _id: 0, host: 'shard1:27018' },
-#      { _id: 1, host: 'shard1_repl1:27028' }
-#    ]
-#  })"
+  rs.initiate({
+    _id: 'shard1',
+    members: [
+      { _id: 0, host: 'shard1:27018' }
+    ]
+  })"
 
   print_color "shard1 finished"
 }
@@ -40,13 +38,13 @@ function shard1() {
 ### настройка шарды 2 и его реплики
 function shard2() {
   print_color "shard2 starting..."
+#      { _id: 3, host: 'shard2_repl1:27029' }
 
   docker compose exec -T shard2 mongosh --port 27019 --eval "
   rs.initiate({
     _id: 'shard2',
     members: [
-      { _id: 0, host: 'shard2:27019' },
-      { _id: 1, host: 'shard2_repl1:27029' }
+      { _id: 2, host: 'shard2:27019' }
     ]
   })"
 
@@ -57,10 +55,11 @@ function shard2() {
 ### привязка шард
 function router() {
   print_color "router starting..."
-
+#sh.addShard('shard1/shard1:27018,shard1_repl1:27028');
+#  sh.addShard('shard2/shard2:27019,shard2_repl1:27029');
   docker compose exec -T mongos_router mongosh --port 27020 --eval "
-  sh.addShard('shard1/shard1:27018,shard1_repl1:27028');
-  sh.addShard('shard2/shard2:27019,shard2_repl1:27029');
+  sh.addShard('shard1/shard1:27018');
+  sh.addShard('shard2/shard2:27019');
   sh.status();"
 
   print_color "router finished"
@@ -73,6 +72,7 @@ function db_init() {
 
   docker compose exec -T mongos_router mongosh --port 27020 --eval "
   sh.enableSharding('somedb');
+  sh.shardCollection('somedb.helloDoc', { age: 1 });
   db = db.getSiblingDB('somedb');
   for(var i = 0; i < 1000; i++) db.helloDoc.insert({age:i, name:'ly'+i});
   db.helloDoc.countDocuments();"
@@ -80,12 +80,24 @@ function db_init() {
   print_color "db_init finished"
 }
 
-#server_cfg
-#sleep 5
+function check_data_shard1() {
+  print_color "check_data_shard1..."
+
+  docker compose exec -T shard1 mongosh --port 27018 --eval "
+  db = db.getSiblingDB('somedb');
+  db.helloDoc.countDocuments();"
+
+  print_color "check_data_shard1 finished"
+}
+
+server_cfg
+sleep 5
 shard1
-#sleep 5
-#shard2
-#sleep 5
-#router
-#sleep 5
-#db_init
+sleep 5
+shard2
+sleep 5
+router
+sleep 5
+db_init
+sleep 5
+check_data_shard1

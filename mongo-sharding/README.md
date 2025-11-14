@@ -89,6 +89,7 @@ sh.addShard( "shard2/shard2:27019");
 
 // создание БД "somedb"
 sh.enableSharding("somedb");
+sh.shardCollection('somedb.helloDoc', { "name": "hashed" });
 
 // перекдючиться на БД somedb
 use somedb;
@@ -98,7 +99,6 @@ for(var i = 0; i < 1000; i++) db.helloDoc.insert({age:i, name:"ly"+i})
 
 // посмотреть количетсво записей из роутера
 db.helloDoc.countDocuments()  // покажет 1000, так как собирает данные с двух шард
-
 exit(); 
 
 ```
@@ -106,13 +106,16 @@ exit();
 - посмотреть количество документов с разных шард
 ```shell
 // подключиться к контейнеру роутера
-docker exec -it shard1 mongosh --port 27018 // либо --port 27019
+// либо --port 27019
+docker exec -it shard1 mongosh --port 27018
  
 // перекдючиться на БД somedb
 use somedb;
  
 // посмотреть количетсво записей из шарды
-db.helloDoc.countDocuments();  // будет чуть меньше/больше половины загруженных данных
+// будет чуть меньше/больше половины загруженных данных
+
+db.helloDoc.countDocuments(); 
  
 exit(); 
 ```
