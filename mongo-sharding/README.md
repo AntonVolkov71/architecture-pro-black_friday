@@ -2,8 +2,7 @@
 
 ## Описание
 - Применили шардирование к БД согласно схемы
-  - [task2.drawio](schemas/task2.drawio)
-  - e![task2.jpg](schemas/task2.jpg)
+  - ![sharding.jpg](schemas/sharding.jpg)
   - 
 ## Как запустить
 - выполнять из директории/mongo-sharding
@@ -11,117 +10,19 @@
 // windows
 docker-compose up -d
 
+// если что-то пошло не так 
+docker compose down -v
+
 // linuxa 
 sudo docker compose up -d 
 ```
 
-- настройка сервера конфигурации
-```shell
-// подключение к контейнеру
-docker exec -it configSrv mongosh --port 27017
+### Настройка БД
+- запустите скрипт 
+  - [mongo-init.sh](scripts/mongo-init.sh)
 
-// иницилизация сервера
-rs.initiate(
-  {
-    _id : "config_server",
-       configsvr: true,
-    members: [
-      { _id : 0, host : "configSrv:27017" }
-    ]
-  }
-);
-
-exit(); 
-
-```
-
-- настройка шарды 1
-```shell
-// подключиться к контейнеру шарды 1
-docker exec -it shard1 mongosh --port 27018
-
-// иницилизация шарды 1
-rs.initiate(
-    {
-      _id : "shard1",
-      members: [
-        { _id : 0, host : "shard1:27018" },
-       // { _id : 1, host : "shard2:27019" }
-      ]
-    }
-);
-
-exit();
-
-```
-
-- инициализация шарды 2
-```shell
-// подключиться к контейнеру шарды 2
-docker exec -it shard2 mongosh --port 27019
-
-// иницилизация шарды 2
-rs.initiate(
-    {
-      _id : "shard2",
-      members: [
-       // { _id : 0, host : "shard1:27018" },
-        { _id : 1, host : "shard2:27019" }
-      ]
-    }
-  );
-  
-exit();
-
-```
-
-- настройка роутера
-  - привязка шард 
-  - создание БД  "somedb"
-  - заполнение коллекции "helloDoc"
-```shell
-// подключиться к контейнеру роутера
-docker exec -it mongos_router mongosh --port 27020
-
-// добавить шарды в роутер
-sh.addShard( "shard1/shard1:27018");
-sh.addShard( "shard2/shard2:27019");
-
-// создание БД "somedb"
-sh.enableSharding("somedb");
-sh.shardCollection('somedb.helloDoc', { "name": "hashed" });
-
-// перекдючиться на БД somedb
-use somedb;
-
-// заполнить данными коллекцию helloDoc
-for(var i = 0; i < 1000; i++) db.helloDoc.insert({age:i, name:"ly"+i})
-
-// посмотреть количетсво записей из роутера
-db.helloDoc.countDocuments()  // покажет 1000, так как собирает данные с двух шард
-exit(); 
-
-```
-
-- посмотреть количество документов с разных шард
-```shell
-// подключиться к контейнеру роутера
-// либо --port 27019
-docker exec -it shard1 mongosh --port 27018
- 
-// перекдючиться на БД somedb
-use somedb;
- 
-// посмотреть количетсво записей из шарды
-// будет чуть меньше/больше половины загруженных данных
-
-db.helloDoc.countDocuments(); 
- 
-exit(); 
-```
 
 ## Как проверить
-
 ### Если вы запускаете проект на локальной машине
 
 Откройте в браузере http://localhost:8080
