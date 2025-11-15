@@ -4,6 +4,10 @@ function print_color() {
     printf "\e[1;34m[$1]\e[0m\n"
 }
 
+function timeout() {
+  sleep 5
+}
+
 ### настройка сервера конфигурации
 function server_cfg() {
   print_color "server_cfg starting..."
@@ -120,8 +124,81 @@ function redis_cash() {
   print_color "redis_cash finished"
 }
 
-function timeout() {
-  sleep 5
+### настройка consul, регистрация сервисов
+function consul_register() {
+  print_color "consul_register..."
+
+  API1_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' pymongo_api_1)
+  API2_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' pymongo_api_2)
+
+  curl -s -X PUT http://127.0.0.1:8500/v1/agent/service/register \
+      -H 'Content-Type: application/json' \
+      -d "{
+        \"ID\": \"pymongo-api-1\",
+        \"Name\": \"pymongo-api\",
+        \"Address\": \"$API1_IP\",
+        \"Port\": 8080,
+        \"Tags\": [\"v1\"]
+      }"
+
+  curl -s -X PUT http://127.0.0.1:8500/v1/agent/service/register \
+      -H 'Content-Type: application/json' \
+      -d "{
+        \"ID\": \"pymongo-api-2\",
+        \"Name\": \"pymongo-api\",
+        \"Address\": \"$API2_IP\",
+        \"Port\": 8080,
+        \"Tags\": [\"v1\"]
+      }"
+
+ print_color "consul_register finished"
+}
+
+### проверка регистрации в Consul
+function consul_check() {
+  print_color "consul_check..."
+
+  curl -s "http://127.0.0.1:8500/v1/catalog/service/pymongo-api"
+
+  print_color "consul_check finished"
+}
+
+### проверка наличие consul на apisix
+function apisix_consul_check() {
+  print_color "apisix_consul_check..."
+
+  curl -s "http://127.0.0.1:9092/v1/discovery/consul/dump"
+
+  print_color "apisix_consul_check finished"
+}
+
+### регистрация и проверка маршрута через consul
+function apisix_route_register() {
+  print_color "apisix_route_register..."
+
+  APIX_KEY="edd1c9f034335f136f87ad84b625c8f1"
+
+  curl -s -X PUT "http://127.0.0.1:9180/apisix/admin/routes" \
+      -H "X-API-KEY: $APIX_KEY" \
+      -d "{
+        \"id\": \"pymongo-api-route\",
+        \"uri\": \"/pymongo/*\",
+        \"plugins\": {
+          \"proxy-rewrite\": {
+            \"regex_uri\": [\"^/pymongo/(.*)\", \"/\$1\"]
+          }
+        },
+        \"upstream\": {
+          \"service_name\": \"pymongo-api\",
+          \"discovery_type\": \"consul\",
+          \"type\": \"roundrobin\",
+          \"scheme\": \"http\"
+        }
+      }"
+
+  curl -v "http://127.0.0.1:9180/apisix/admin/routes" -H "X-API-KEY: $APIX_KEY"
+
+  print_color "apisix_route_register finished"
 }
 
 server_cfg
@@ -147,3 +224,15 @@ timeout
 
 redis_cash
 
+consul_register
+timeout
+
+consul_check
+timeout
+timeout
+
+apisix_consul_check
+timeout
+timeout
+
+apisix_route_register

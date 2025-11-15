@@ -1,6 +1,50 @@
 services:
-  pymongo_api:
-    container_name: pymongo_api
+  apisix:
+    image: apache/apisix:3.9.0-debian
+    restart: always
+    volumes:
+      - ./apisix_conf/config.yaml:/usr/local/apisix/conf/config.yaml:ro
+    depends_on:
+      - etcd
+    ##network_mode: host
+    ports:
+      - "9180:9180/tcp"
+      - "9080:9080/tcp"
+      - "9091:9091/tcp"
+      - "9443:9443/tcp"
+      - "9092:9092/tcp"
+    networks:
+      - app-network
+
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.13
+    restart: always
+    volumes:
+      - etcd_data:/etcd-data
+    environment:
+      ETCD_DATA_DIR: "/etcd-data"
+      ETCD_ENABLE_V2: "true"
+      ETCD_LISTEN_CLIENT_URLS: "http://0.0.0.0:2379"
+      ETCD_ADVERTISE_CLIENT_URLS: "http://etcd:2379"
+      ETCD_NAME: "etcd-node1"
+    ports:
+      - "2379:2379"
+    networks:
+      - app-network
+
+  consul:
+    image: consul:1.15.1
+    container_name: consul
+    restart: always
+    networks:
+      - app-network
+    ports:
+      - '8500:8500'
+    command: 'agent -server -bootstrap-expect=1 -node=agent-one -client 0.0.0.0 -log-level info -data-dir=/consul/data -enable-script-checks'
+
+
+  pymongo_api_1:
+    container_name: pymongo_api_1
     build:
       context: api_app
       dockerfile: Dockerfile
@@ -8,6 +52,22 @@ services:
       - mongos_router
     ports:
       - "8080:8080"
+    networks:
+      - app-network
+    environment:
+      MONGODB_URL: "mongodb://mongos_router:27020"
+      MONGODB_DATABASE_NAME: "somedb"
+      REDIS_URL: "redis://redis_1:6379"
+
+  pymongo_api_2:
+    container_name: pymongo_api_2
+    build:
+      context: api_app
+      dockerfile: Dockerfile
+    depends_on:
+      - mongos_router
+    ports:
+      - "8081:8080"
     networks:
       - app-network
     environment:
@@ -209,7 +269,7 @@ services:
     image: "redis:latest"
     container_name: redis_1
     ports:
-      - "6379"
+      - "6379:6379"
     volumes:
       - redis_1_data:/data
       - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
@@ -226,6 +286,8 @@ volumes:
   shard1-repl2-data:
   shard2-repl2-data:
   redis_1_data: {}
+  etcd_data:
+    driver: local
 
 networks:
   app-network:
