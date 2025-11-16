@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Самая честная викторина</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        #runaway-btn {
+            padding: 20px 40px;
+            font-size: 24px;
+            font-weight: bold;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        #runaway-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 12px 35px rgba(0,0,0,0.4);
+        }
+
+        .title {
+            color: white;
+            font-size: 32px;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1 class="title">Попробуй забрать свой миллион! 💰</h1>
+    <button id="runaway-btn" onmouseover="moveButton()">Забрать свой миллион</button>
+</div>
+
+<script>
+    function moveButton() {
+        const button = document.getElementById('runaway-btn');
+        const container = document.querySelector('.container');
+
+        // Получаем размеры контейнера и кнопки
+        const containerRect = container.getBoundingClientRect();
+        const buttonRect = button.getBoundingClientRect();
+
+        // Максимальные координаты для размещения кнопки
+        const maxX = containerRect.width - buttonRect.width - 20;
+        const maxY = containerRect.height - buttonRect.height - 20;
+
+        // Генерируем случайные координаты
+        const randomX = Math.floor(Math.random() * maxX);
+        const randomY = Math.floor(Math.random() * maxY);
+
+        // Устанавливаем новые координаты
+        button.style.left = randomX + 'px';
+        button.style.top = randomY + 'px';
+        button.style.transform = 'none'; // Убираем transform для корректного позиционирования
+    }
+
+    // Дополнительная функция для обработки движения мыши рядом с кнопкой
+    document.addEventListener('mousemove', function(e) {
+        const button = document.getElementById('runaway-btn');
+        const buttonRect = button.getBoundingClientRect();
+
+        // Определяем зону вокруг кнопки (50px)
+        const safeZone = 50;
+        const mouseX = e.clientX;
+        const mouseY = e.clientY;
+
+        // Проверяем, находится ли курсор рядом с кнопкой
+        if (Math.abs(mouseX - (buttonRect.left + buttonRect.width/2)) < safeZone &&
+            Math.abs(mouseY - (buttonRect.top + buttonRect.height/2)) < safeZone) {
+            moveButton();
+        }
+    });
+
+    // Функция для победы (если всё-таки удалось нажать)
+    document.getElementById('runaway-btn').addEventListener('click', function() {
+        alert('🎉 Поздравляем! Вы забрали свой миллион! 🎉\nПереведите 1000 рублей на номер +7-XXX-XXX-XX-XX для получения выигрыша! 😄');
+    });
+</script>
+</body>
+</html>
