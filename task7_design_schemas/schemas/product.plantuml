@@ -1,0 +1,16 @@
+@startuml
+entity Product {
+  +String _id
+  +String title
+  +String category
+  +Integer price
+  +List<Remainder> remainders
+}
+
+entity Remainder {
+  +String geo_zone
+  +Integer quantity
+}
+
+Product "1" -- "0..*" Remainder : has
+@enduml
