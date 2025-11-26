@@ -2,7 +2,7 @@
 
 ###
 # Инициализируем бд
-###
+##
 
 docker compose exec -T mongodb1 mongosh <<EOF
 use somedb
